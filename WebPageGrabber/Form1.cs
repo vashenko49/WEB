@@ -66,7 +66,7 @@ namespace WebPageGrabber
         }
         private void btAbort_Click(object sender, EventArgs e)
         {
-
+            //rockinbbv's branch
             try
             {
                 GrabberThread.Abort();
