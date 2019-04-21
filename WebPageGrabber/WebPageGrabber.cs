@@ -7,8 +7,6 @@ using System.Net;
 using System.Windows.Forms;
 using HtmlAgilityPack;
 
-
-
 namespace WebPageGrabber
 {
     class WebPageGrabber
@@ -16,43 +14,34 @@ namespace WebPageGrabber
 
         Dictionary<string, string> VisitedLinks;
 
-        SettingsObject Settings;        
-
-
+        SettingsObject Settings;
         public WebPageGrabber(SettingsObject _settings)
         {
             Settings = _settings;
-            VisitedLinks = new Dictionary<string,string>();
+            VisitedLinks = new Dictionary<string, string>();
         }
 
-      
+
 
         public void StartGrab()
         {
             List<string> linksInWebBage = new List<string>();
             string pathToDownlaodSubLinks = string.Empty;
 
-            // Шаг 1: Загрузить основной начальный URL.
-            UpdateStatusText("Загрузка основного URL");
-            UpdateProgressBar(0);
             GrabAndStoreWebPage(Settings.URL, Settings.DestinationFolder, ref linksInWebBage, ref pathToDownlaodSubLinks, true);
-            
-            if(Settings.Depth > 1)
+
+            if (Settings.Depth > 1)
             {
 
-                UpdateProgressBar(33);
 
-                if(!(System.IO.Directory.Exists(pathToDownlaodSubLinks)))
+                if (!(System.IO.Directory.Exists(pathToDownlaodSubLinks)))
                     System.IO.Directory.CreateDirectory(pathToDownlaodSubLinks);
 
-                // Шаг 2: Рекурсивно скачивать ссылки на указанный уровень
-                RecursivelyDownloadUrl(linksInWebBage,pathToDownlaodSubLinks,Settings.Depth -1, true);
+                //Step 2: Recursively download links to the specified level
+                RecursivelyDownloadUrl(linksInWebBage, pathToDownlaodSubLinks, Settings.Depth - 1, true);
 
             }
 
-            UpdateProgressBar(100);
-            ShowMessageBox("Задание выполнено");
-            UpdateStatusText("Задача выполнена!");
             ReenableGrabButton();
 
         }
@@ -67,55 +56,45 @@ namespace WebPageGrabber
 
             List<string> subLinks = new List<string>();
 
-            for(int i = 0; i < links.Count; i++)
+            for (int i = 0; i < links.Count; i++)
             {
-                if (calledFromMain)
-                {
-                    UpdateProgressText("URL загрузки нет" + (i + 1) + "/" + links.Count + " рекурсивно " + depth + " уровни входа");
-                    UpdateStatusText("URL загрузки нет " + (i + 1) + "/" + links.Count + " рекурсивно" + depth + " уровни входа");
-                }
+
                 string link = links[i];
                 string pathtoDownloadSybLinks = string.Empty;
                 GrabAndStoreWebPage(link, pathToDownload, ref subLinks, ref pathtoDownloadSybLinks);
-                // если это значение равно нулю, значит, при посещении ссылки произошла ошибка
+
+                //if this is null means there was an error visiting the link
                 if (pathtoDownloadSybLinks.Trim() != string.Empty)
                 {
                     RecursivelyDownloadUrl(subLinks, pathtoDownloadSybLinks, depth - 1);
                 }
 
-                if (calledFromMain)
-                {
-                    UpdateProgressBar(((i + 1) / links.Count * 67) + 33);                    
-                }
             }
         }
 
-        
+
 
 
         public void GrabAndStoreWebPage(string url, string path, ref List<string> linksInWebBage, ref string pathToDownlaodSubLinks, bool mainPage = false)
         {
-            // Сначала очищаем URL
+            //First clean the URL
             char[] illegalEnds = new char[] { '/', '#', '?', '&' };
             while (illegalEnds.Contains(url[url.Length - 1]))
             {
                 url = url.Substring(0, url.Length - 1);
             }
 
-            // уже посетили. почему опять?
+            //already visited. why again?
             if (VisitedLinks.ContainsKey(url))
             {
-                pathToDownlaodSubLinks = VisitedLinks[url]; 
+                pathToDownlaodSubLinks = VisitedLinks[url];
                 return;
             }
 
 
 
-            // обновляем текстовое поле прогресса в основной форме
-            UpdateProgressText("---------------------------" + Environment.NewLine + "Пытаюсь скачать: " + url);
 
-
-            StringBuilder htmlContent = new StringBuilder();            
+            StringBuilder htmlContent = new StringBuilder();
             using (var client = new WebClient())
             {
                 try
@@ -128,9 +107,9 @@ namespace WebPageGrabber
                     {
                         ShowMessageBox(ex.Message);
                     }
-                    UpdateProgressText("Не удалось решить \"" + url + Environment.NewLine + "Детали:  " + ex.Message);
+
                     return;
-                }                
+                }
             }
 
             HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
@@ -142,13 +121,13 @@ namespace WebPageGrabber
             ResolveRelativePathsForLinksInTag("//link", "href", url, ref doc, null);
 
 
-            
+
             string htmlFileName = string.Empty;
             var htmlnode = doc.DocumentNode.Descendants("title").SingleOrDefault();
             if (htmlnode != null)
             {
                 htmlFileName = Utilities.RemoveIllegalCharactersFromFileName(htmlnode.InnerText);
-            }             
+            }
             if (htmlFileName.Length < 1)
             {
                 int lastIndex = url.LastIndexOf('/');
@@ -161,11 +140,10 @@ namespace WebPageGrabber
             doc.Save(pathToSavedoc);
 
             pathToDownlaodSubLinks = path + @"\" + @htmlFileName;
-            
+
             //add to visited list
             VisitedLinks.Add(url, pathToDownlaodSubLinks);
 
-            UpdateProgressText("Удачно! " + Environment.NewLine + "Saved as : " + pathToSavedoc);
 
             //System.IO.File.WriteAllText(Settings.DestinationFolder + @"\" + htmlFileName, doc.HtmlDocument);
         }
@@ -175,7 +153,7 @@ namespace WebPageGrabber
         {
             var node = doc.DocumentNode;
             if (node == null) return;
-            
+
             var nodes = node.SelectNodes(xPath);
             if (nodes == null) return;
 
@@ -212,41 +190,20 @@ namespace WebPageGrabber
         private void ShowMessageBox(string msg)
         {
 
-            Settings.MainFormInstance.Invoke((MethodInvoker)delegate()
+            Settings.MainFormInstance.Invoke((MethodInvoker)delegate ()
             {
                 MessageBox.Show(msg);
             }
             );
         }
-        private void UpdateProgressText(string text)
-        {
-            Settings.MainFormInstance.Invoke((MethodInvoker)delegate
-            {
-                Settings.MainFormInstance.tbProgress.Text += text + Environment.NewLine;
-                Settings.MainFormInstance.tbProgress.SelectionStart = Settings.MainFormInstance.tbProgress.Text.Length;
-                Settings.MainFormInstance.tbProgress.ScrollToCaret();
-            });
-        }
-        private void UpdateProgressBar(int percentage)
-        {
-            Settings.MainFormInstance.Invoke((MethodInvoker)delegate
-            {
-                Settings.MainFormInstance.progressBar1.Value = percentage;
-            });
-        }
+
         private void ReenableGrabButton()
         {
             Settings.MainFormInstance.Invoke((MethodInvoker)delegate
             {
-                Settings.MainFormInstance.ReEnableGrabButton();                
+                Settings.MainFormInstance.ReEnableGrabButton();
             });
         }
-        private void UpdateStatusText(string msg)
-        {
-            Settings.MainFormInstance.Invoke((MethodInvoker)delegate
-            {
-                Settings.MainFormInstance.label6.Text = msg;
-            });
-        }
+
     }
 }

@@ -9,7 +9,6 @@ using System.Threading;
 using System.Text;
 using System.Drawing;
 
-
 namespace WebPageGrabber
 {
     /// <summary>
@@ -221,7 +220,7 @@ namespace WebPageGrabber
             // 3. Байты непосредственно готовых к записи в файл или для чего-то иного.
 
             SendInfo si = new SendInfo();
-            si.message = Parent.textBoxSend.Text;
+            si.message = Parent.Server_response;
 
 
             //  Если нет сообщения и отсылаемого файла продолжать процедуру отправки нет смысла.
@@ -271,13 +270,11 @@ namespace WebPageGrabber
             infobuffer = null;
             total = null;
             SendFileName = null;
-           // Parent.labelFileName.Text = "";
             GC.Collect();
             GC.WaitForPendingFinalizers();
 
             // Подтверждение успешной отправки
             Parent.ShowReceiveMessage("Данные успешно отправлены!");
-            
         }
 
 
@@ -517,5 +514,4 @@ namespace WebPageGrabber
     }
 
     ///////////////////////////////////////////////////////////////////////////
-
 }
